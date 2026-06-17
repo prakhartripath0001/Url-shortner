@@ -1,9 +1,9 @@
 {
-  "logo": "Shortify",
-  "platform": "Platform",
-  "pricing": "Pricing",
-  "login": "Login",
-  "signup": "Sign up Free",
-  "english": "English",
-  "hindi": "Hindi"
+    "logo": "Shortify",
+    "platform": "Platform",
+    "pricing": "Pricing",
+    "login": "Login",
+    "signup": "Sign up Free",
+    "english": "English",
+    "hindi": "Hindi"
 }
