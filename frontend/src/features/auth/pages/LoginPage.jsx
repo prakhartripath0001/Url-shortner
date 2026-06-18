@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import AuthNavbar from "../../../components/AuthNavbar/AuthNavbar.jsx";
 
 function LoginPage() {
   const { t } = useTranslation();
@@ -15,15 +16,14 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center bg-slate-50/50 px-4 py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50/50">
+      <AuthNavbar />
+      <div className="flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50">
-        
-        {/* Top: Shortify Brand & Subtitles */}
+
+        {/* Heading */}
         <div className="text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight cursor-pointer">
-            Short<span className="text-blue-600">ify</span>
-          </h1>
-          <h2 className="mt-6 text-2xl font-bold tracking-tight text-slate-900">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
             {t("login", "Login")}
           </h2>
           <p className="mt-2 text-sm text-slate-500">
@@ -116,6 +116,7 @@ function LoginPage() {
             {t("terms_disclaimer")}
           </p>
         </form>
+      </div>
       </div>
     </div>
   );
