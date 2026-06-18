@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import AuthNavbar from "../../../components/AuthNavbar/AuthNavbar.jsx";
 
 function LoginPage() {
@@ -114,6 +115,14 @@ function LoginPage() {
           {/* Terms Disclaimer */}
           <p className="text-xs text-center text-slate-400 mt-6 select-none">
             {t("terms_disclaimer")}
+          </p>
+
+          {/* Signup prompt */}
+          <p className="text-sm text-center text-slate-500">
+            Don't have an account?{" "}
+            <Link to="/signup" className="font-semibold text-blue-600 hover:text-blue-500 transition">
+              Sign up
+            </Link>
           </p>
         </form>
       </div>
