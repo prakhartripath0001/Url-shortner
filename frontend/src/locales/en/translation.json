@@ -5,5 +5,6 @@
     "login": "Login",
     "signup": "Sign up Free",
     "english": "English",
-    "hindi": "Hindi"
+    "hindi": "Hindi",
+    "terms_disclaimer": "By logging in, you are accepting all the terms & conditions"
 }
