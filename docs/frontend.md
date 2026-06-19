@@ -1,84 +1,100 @@
 # Frontend Documentation - Shortify
 
-The Shortify client web interface is built using **React 19**, **Vite** (for fast bundling/HMR), **Tailwind CSS** (for responsive styles), and **i18next** (for internationalization).
+The Shortify client web interface is built using **React 19**, **Vite** (for fast bundling/HMR), **Tailwind CSS** (for responsive styles), **React Router v6** (for page navigation), and **i18next** (for internationalization).
 
 ---
 
-## 🛠️ Architecture & Setup
+## Tech Stack
 
-### Core Technologies
-* **React 19**: Modern UI component library.
-* **Vite**: Dev server and module bundler.
-* **Tailwind CSS**: Utility-first CSS framework for responsive layout design.
-* **i18next**: Localization library.
-* **Lucide React**: Clean and customizable SVG icons.
-
-### Startup Script
-From the `frontend` directory:
-```bash
-# Install NPM dependencies
-npm install
-
-# Start Vite HMR Dev Server
-npm run dev
-
-# Compile Production Build (dist/ folder)
-npm run build
-```
-By default, the application runs on **`http://localhost:5173`**.
+| Technology | Version | Purpose |
+| :--- | :--- | :--- |
+| React | 19 | UI component library |
+| Vite | 8 | Dev server and module bundler |
+| Tailwind CSS | 3.4 | Utility-first styling |
+| React Router | 6 | Client-side page routing |
+| i18next | 26 | Internationalization (EN / HI) |
+| Lucide React | 1.20 | SVG icon components |
 
 ---
 
-## 📁 Key Frontend Directories
+## Directory Structure
 
 ```text
 frontend/src/
-├── assets/          # Logo SVGs, images, static assets
-├── components/      # Reusable UI widgets (Navbar, LanguageSwitcher)
-├── i18n/            # Internationalization config core file
-├── locales/         # translation.json dictionaries (English & Hindi)
-├── pages/           # Page routes (Dashboard, Landing page, 404, etc.)
-├── App.css          # Styling updates
-├── index.css        # Global CSS + Tailwind directives + Poppins font import
-├── App.jsx          # Root routing and main layout structure
-└── main.jsx         # App mounting point & i18n initializer
+├── components/
+│   ├── Navbar/
+│   │   └── Navbar.jsx           # Full navbar with links — shown on HomePage only
+│   ├── AuthNavbar/
+│   │   └── AuthNavbar.jsx       # Logo-only navbar — shown on Login and Signup pages
+│   └── LanguageSwitcher/
+│       └── LanguageSwitcher.jsx # Language toggle component (placeholder)
+├── features/
+│   └── auth/
+│       └── pages/
+│           ├── LoginPage.jsx    # Login form page
+│           └── SignupPage.jsx   # Signup/registration form page
+├── pages/
+│   └── HomePage.jsx             # Landing page with full Navbar
+├── i18n/
+│   └── i18n.js                  # i18next initialization
+├── locales/
+│   ├── en/translation.json      # English translation strings
+│   └── hi/translation.json      # Hindi translation strings
+├── App.jsx                      # Root router — maps paths to page components
+├── main.jsx                     # App entry point — BrowserRouter + i18n bootstrap
+└── index.css                    # Global CSS + Tailwind directives + Poppins font
 ```
 
 ---
 
-## 🌐 Internationalization (i18n)
+## Routing
 
-We support multi-language localizations. The active dictionaries are loaded from `src/locales/`.
+Routes are defined in [App.jsx](../frontend/src/App.jsx) using React Router v6:
 
-### Config File (`src/i18n/i18n.js`)
-Configured to support English (`en`) and Hindi (`hi`), defaulting to English:
-```javascript
-import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
-import en from "../locales/en/translation.json";
-import hi from "../locales/hi/translation.json";
+| Path | Component | Navbar |
+| :--- | :--- | :--- |
+| `/` | `HomePage` | Full Navbar (Platform, Pricing, Login, Sign up) |
+| `/login` | `LoginPage` | AuthNavbar (Logo only, links to `/`) |
+| `/signup` | `SignupPage` | AuthNavbar (Logo only, links to `/`) |
 
-i18n.use(initReactI18next).init({
-  resources: {
-    en: { translation: en },
-    hi: { translation: hi }
-  },
-  lng: "en",
-  fallbackLng: "en",
-  interpolation: { escapeValue: false }
-});
-```
+---
+
+## Pages
+
+### HomePage (`/`)
+- Displays the full `Navbar` component.
+- Hero section with "Get Started Free" and "Login" call-to-action buttons.
+
+### LoginPage (`/login`)
+- Displays the `AuthNavbar` with the Shortify logo linking to home.
+- Email and password input fields with icons and password visibility toggle.
+- Forgot password link.
+- Login submit button.
+- Terms disclaimer: *By logging in, you are accepting all the terms & conditions.*
+- "Don't have an account? Sign up" link to `/signup`.
+
+### SignupPage (`/signup`)
+- Displays the `AuthNavbar` with the Shortify logo linking to home.
+- "Create your account" heading with "Already have an account? Login" link to `/login`.
+- Email and password input fields with icons and password visibility toggle.
+- "Create a free account" submit button.
+- Terms disclaimer: *By creating an account, you agree to our Terms of Service and Privacy Policy.*
+
+---
+
+## Internationalization (i18n)
+
+Configured to support English (`en`) and Hindi (`hi`), defaulting to English.
 
 ### Adding New Language Strings
-Insert key-value pairs into translation files:
-- [English translation.json](file:///Users/prakhartripathi/Documents/Url-shortner/frontend/src/locales/en/translation.json)
-- [Hindi translation.json](file:///Users/prakhartripathi/Documents/Url-shortner/frontend/src/locales/hi/translation.json)
+Insert key-value pairs into both translation files:
+- [en/translation.json](../frontend/src/locales/en/translation.json)
+- [hi/translation.json](../frontend/src/locales/hi/translation.json)
 
 Example:
 ```json
 {
-  "welcome": "Welcome to Shortify",
-  "shorten_btn": "Shorten URL"
+  "welcome": "Welcome to Shortify"
 }
 ```
 
@@ -94,12 +110,18 @@ function MyComponent() {
 
 ---
 
-## 🔧 Troubleshooting
+## Startup Script
 
-### Blank Page / Crash on Startup
+```bash
+cd frontend
+npm install     # first time only
+npm run dev     # starts dev server at http://localhost:5173
+```
+
+---
+
+## Troubleshooting
+
 > [!WARNING]
-> **Issue**: Vite dev server loads but displays a completely blank page. Looking at the browser console displays a JSON parsing or syntax error.
-> 
-> **Cause**: This happens when [translation.json](file:///Users/prakhartripathi/Documents/Url-shortner/frontend/src/locales/en/translation.json) files are empty (0 bytes). Vite fails to import empty text content as JSON.
-> 
-> **Solution**: The locale JSON files must at least contain an empty JSON object: `{}`. We have initialized both translation files with `{}` to prevent this crash.
+> **Blank Page on Startup**: If the browser shows a blank page, check the browser console. The most common cause is empty `translation.json` files (0 bytes). Both locale files must contain at least `{}` to be valid JSON. Both files are currently initialized correctly.
+
