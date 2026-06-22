@@ -1,0 +1,22 @@
+name: Java CI with Maven
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up build environment
+        uses: ./.github/actions/setup-build
+
+      - name: Build and test with Maven
+        run: ./mvnw clean test
+        working-directory: backend/services/auth-service
