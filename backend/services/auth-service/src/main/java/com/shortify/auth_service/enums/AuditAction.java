@@ -1,4 +1,14 @@
 package com.shortify.auth_service.enums;
 
 public enum AuditAction {
+    LOGIN_SUCCESS,
+    LOGIN_FAILURE,
+    LOGOUT,
+    REGISTRATION_INITIATED,
+    EMAIL_VERIFIED,
+    PASSWORD_RESET_REQUESTED,
+    PASSWORD_RESET_SUCCESS,
+    ACCOUNT_LOCKED,
+    ACCOUNT_UNLOCKED,
+    SESSION_FORCE_TERMINATED
 }

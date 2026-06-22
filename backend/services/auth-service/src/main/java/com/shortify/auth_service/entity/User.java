@@ -1,6 +1,6 @@
 package com.shortify.auth_service.entity;
 
-import com.prakhar.authservice.enums.Role;
+import com.shortify.auth_service.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -27,13 +27,16 @@ public class User {
     @Column(name = "password_hash", nullable = false, length = 255)
     private String password;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private Role role = Role.USER;
+    private Role role = Role.ROLE_USER;
 
+    @Builder.Default
     @Column(name = "is_enabled", nullable = false)
     private boolean isEnabled = false;
 
+    @Builder.Default
     @Column(name = "is_locked", nullable = false)
     private boolean isLocked = false;
 
