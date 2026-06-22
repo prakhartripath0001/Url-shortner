@@ -1,4 +1,9 @@
 package com.shortify.auth_service.auth.dto;
 
-public class RefreshTokenRequest {
-}
+import jakarta.validation.constraints.NotBlank;
+
+public record RefreshTokenRequest(
+
+        @NotBlank(message = "Refresh token is required")
+        String refreshToken
+) {}

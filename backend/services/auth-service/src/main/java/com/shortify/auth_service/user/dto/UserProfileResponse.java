@@ -1,22 +1,24 @@
-package com.shortify.auth_service.auth.dto;
+package com.shortify.auth_service.user.dto;
 
 import com.shortify.auth_service.entity.User;
 import com.shortify.auth_service.enums.Role;
 
-public record UserResponse(
+import java.time.LocalDateTime;
+
+public record UserProfileResponse(
         Long id,
         String username,
         String email,
         Role role,
-        boolean enabled
+        LocalDateTime createdAt
 ) {
-    public static UserResponse from(User user) {
-        return new UserResponse(
+    public static UserProfileResponse from(User user) {
+        return new UserProfileResponse(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getRole(),
-                user.isEnabled()
+                user.getCreatedAt()
         );
     }
 }
