@@ -1,0 +1,324 @@
+version: "3.9"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Shortify — Full Local Development Stack
+#  docker compose up -d
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+#  Services:
+#    Infrastructure:  postgres, redis, kafka, zookeeper, mailhog
+#    Backend:         auth-service (:8082), url-service (:8083),
+#                     analytics-service (:8084), notification-service (:8085)
+#    Frontend:        frontend (:3000)
+#    Monitoring:      prometheus (:9090), grafana (:3001)
+#    Dev Tools:       kafka-ui (:8090), pgadmin (:5050)
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+networks:
+  shortify-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  prometheus_data:
+  grafana_data:
+  pgadmin_data:
+
+# ─── Shared environment defaults ───────────────────────────────────────────────
+x-common-env: &common-env
+  SPRING_PROFILES_ACTIVE: dev
+  JWT_SECRET: shortify-dev-jwt-secret-must-be-at-least-32-chars-long
+  KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  MAIL_HOST: mailhog
+  MAIL_PORT: 1025
+
+services:
+
+  # ─── PostgreSQL ──────────────────────────────────────────────────────────────
+  # Single instance for local dev. In production: separate DBs per service.
+  # WHY POSTGRES OVER MYSQL? Better JSON support, partial indexes, better
+  # text search, superior replication options (logical replication).
+  postgres:
+    image: postgres:16-alpine
+    container_name: shortify-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: shortify
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - shortify-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis ───────────────────────────────────────────────────────────────────
+  # Cache layer for the redirect hot path.
+  # maxmemory-policy allkeys-lru: evict least-recently-used keys when full.
+  # This is the right policy for a URL cache (LRU = most popular stay cached).
+  redis:
+    image: redis:7-alpine
+    container_name: shortify-redis
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - shortify-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Zookeeper ───────────────────────────────────────────────────────────────
+  # Kafka requires Zookeeper for cluster coordination (pre-KRaft mode).
+  # In Kafka 3.x+, KRaft mode removes Zookeeper dependency.
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: shortify-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - shortify-net
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo ruok | nc localhost 2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Kafka ───────────────────────────────────────────────────────────────────
+  # Message broker for event-driven architecture.
+  # TWO listeners:
+  #   - INTERNAL (kafka:29092): Used by Spring services inside Docker network
+  #   - EXTERNAL (localhost:9092): Used by local dev tools (Kafka UI, CLI)
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: shortify-kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 168    # 7 days retention
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    ports:
+      - "9092:9092"
+    networks:
+      - shortify-net
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ─── MailHog (Local Email Dev Server) ────────────────────────────────────────
+  # Catches all outgoing emails in development. No emails actually sent.
+  # Web UI: http://localhost:8025
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: shortify-mailhog
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+    networks:
+      - shortify-net
+
+  # ─── Auth Service ─────────────────────────────────────────────────────────────
+  auth-service:
+    build:
+      context: ./backend/services/auth-service
+      dockerfile: Dockerfile
+    container_name: shortify-auth
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      SERVER_PORT: 8082
+      DB_URL: jdbc:postgresql://postgres:5432/auth_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - "8082:8082"
+    networks:
+      - shortify-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ─── URL Service ──────────────────────────────────────────────────────────────
+  url-service:
+    build:
+      context: ./backend/services/url-service
+      dockerfile: Dockerfile
+    container_name: shortify-url
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      SERVER_PORT: 8083
+      DB_URL: jdbc:postgresql://postgres:5432/url_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      APP_BASE_URL: http://localhost:8083
+    ports:
+      - "8083:8083"
+    networks:
+      - shortify-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ─── Analytics Service ────────────────────────────────────────────────────────
+  analytics-service:
+    build:
+      context: ./backend/services/analytics-service
+      dockerfile: Dockerfile
+    container_name: shortify-analytics
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      SERVER_PORT: 8084
+      DB_URL: jdbc:postgresql://postgres:5432/analytics_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - "8084:8084"
+    networks:
+      - shortify-net
+
+  # ─── Notification Service ─────────────────────────────────────────────────────
+  notification-service:
+    build:
+      context: ./backend/services/notification-service
+      dockerfile: Dockerfile
+    container_name: shortify-notification
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    environment:
+      <<: *common-env
+      SERVER_PORT: 8085
+    ports:
+      - "8085:8085"
+    networks:
+      - shortify-net
+
+  # ─── Frontend (React + Vite) ─────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: shortify-frontend
+    ports:
+      - "3000:80"
+    networks:
+      - shortify-net
+    depends_on:
+      - url-service
+      - auth-service
+
+  # ─── Prometheus ───────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: shortify-prometheus
+    volumes:
+      - ./infrastructure/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"
+    ports:
+      - "9090:9090"
+    networks:
+      - shortify-net
+
+  # ─── Grafana ─────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: shortify-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/monitoring/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3001:3000"
+    networks:
+      - shortify-net
+    depends_on:
+      - prometheus
+
+  # ─── Kafka UI (Dev Tool) ──────────────────────────────────────────────────────
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: shortify-kafka-ui
+    environment:
+      KAFKA_CLUSTERS_0_NAME: shortify-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    ports:
+      - "8090:8080"
+    networks:
+      - shortify-net
+    depends_on:
+      - kafka
+
+  # ─── pgAdmin (Dev Tool) ───────────────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: shortify-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@shortify.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    networks:
+      - shortify-net
+    depends_on:
+      - postgres

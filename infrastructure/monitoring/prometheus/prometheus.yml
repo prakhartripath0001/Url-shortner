@@ -1,0 +1,47 @@
+global:
+  scrape_interval: 15s      # Scrape metrics every 15 seconds
+  evaluation_interval: 15s  # Evaluate alerting rules every 15 seconds
+
+scrape_configs:
+  # ─── Spring Boot Services (via /actuator/prometheus) ─────────────────────────
+  - job_name: "auth-service"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["auth-service:8082"]
+        labels:
+          service: "auth-service"
+          env: "local"
+
+  - job_name: "url-service"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["url-service:8083"]
+        labels:
+          service: "url-service"
+          env: "local"
+
+  - job_name: "analytics-service"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["analytics-service:8084"]
+        labels:
+          service: "analytics-service"
+          env: "local"
+
+  - job_name: "notification-service"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["notification-service:8085"]
+        labels:
+          service: "notification-service"
+          env: "local"
+
+  # ─── Redis ───────────────────────────────────────────────────────────────────
+  - job_name: "redis"
+    static_configs:
+      - targets: ["redis:6379"]
+
+  # ─── Kafka ───────────────────────────────────────────────────────────────────
+  - job_name: "kafka"
+    static_configs:
+      - targets: ["kafka:9101"]
