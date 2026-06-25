@@ -1,6 +1,7 @@
 package com.shortify.auth_service.security.jwt;
 
 import com.shortify.auth_service.config.JwtConfig;
+import com.shortify.auth_service.security.userdetails.CustomUserDetails;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -22,15 +23,29 @@ public class JwtService {
     private final JwtConfig jwtConfig;
 
     public String generateAccessToken(UserDetails userDetails) {
-        return buildToken(new HashMap<>(), userDetails, jwtConfig.accessTokenExpiration());
+        Map<String, Object> claims = new HashMap<>();
+        populateClaims(claims, userDetails);
+        return buildToken(claims, userDetails, jwtConfig.accessTokenExpiration());
     }
 
     public String generateAccessToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        return buildToken(extraClaims, userDetails, jwtConfig.accessTokenExpiration());
+        Map<String, Object> claims = new HashMap<>(extraClaims);
+        populateClaims(claims, userDetails);
+        return buildToken(claims, userDetails, jwtConfig.accessTokenExpiration());
+    }
+
+    private void populateClaims(Map<String, Object> claims, UserDetails userDetails) {
+        if (userDetails instanceof CustomUserDetails customUserDetails) {
+            claims.put("userId", customUserDetails.getUser().getId());
+            claims.put("email", customUserDetails.getUser().getEmail());
+            claims.put("role", customUserDetails.getUser().getRole().name());
+        }
     }
 
     public String generateRefreshToken(UserDetails userDetails) {
-        return buildToken(new HashMap<>(), userDetails, jwtConfig.refreshTokenExpiration());
+        Map<String, Object> claims = new HashMap<>();
+        populateClaims(claims, userDetails);
+        return buildToken(claims, userDetails, jwtConfig.refreshTokenExpiration());
     }
 
     private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {

@@ -12,6 +12,7 @@ CREATE DATABASE auth_db;
 CREATE DATABASE url_db;
 CREATE DATABASE analytics_db;
 CREATE DATABASE notification_db;
+CREATE DATABASE payment_db;
 
 -- Grant all privileges to the postgres user for local dev
 -- In production: create a separate user per DB with minimal privileges
@@ -19,3 +20,4 @@ GRANT ALL PRIVILEGES ON DATABASE auth_db TO postgres;
 GRANT ALL PRIVILEGES ON DATABASE url_db TO postgres;
 GRANT ALL PRIVILEGES ON DATABASE analytics_db TO postgres;
 GRANT ALL PRIVILEGES ON DATABASE notification_db TO postgres;
+GRANT ALL PRIVILEGES ON DATABASE payment_db TO postgres;

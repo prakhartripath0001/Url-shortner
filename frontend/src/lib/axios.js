@@ -59,4 +59,42 @@ authApi.interceptors.request.use((config) => {
   return config;
 });
 
+// Payment service client
+export const paymentApi = axios.create({
+  baseURL: import.meta.env.VITE_PAYMENT_BASE_URL || "http://localhost:8086",
+  headers: { "Content-Type": "application/json" },
+  timeout: 10000,
+});
+
+paymentApi.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().accessToken;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+paymentApi.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const original = error.config;
+    if (error.response?.status === 401 && !original._retry) {
+      original._retry = true;
+      try {
+        const refreshToken = useAuthStore.getState().refreshToken;
+        const res = await axios.post(
+          `${import.meta.env.VITE_AUTH_BASE_URL || "http://localhost:8082"}/api/v1/auth/refresh`,
+          { refreshToken }
+        );
+        const { accessToken } = res.data;
+        useAuthStore.getState().setTokens(accessToken, refreshToken);
+        original.headers.Authorization = `Bearer ${accessToken}`;
+        return paymentApi(original);
+      } catch {
+        useAuthStore.getState().logout();
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

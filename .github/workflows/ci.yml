@@ -166,13 +166,84 @@ jobs:
         run: npm run build
 
   # ═══════════════════════════════════════════════════════════════════════════
+  #  JOB 3a: Test Analytics Service
+  # ═══════════════════════════════════════════════════════════════════════════
+  test-analytics-service:
+    name: "Test: analytics-service"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/services/analytics-service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Run tests (compile verify)
+        run: ./mvnw verify -B
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  #  JOB 3b: Test Payment Service
+  # ═══════════════════════════════════════════════════════════════════════════
+  test-payment-service:
+    name: "Test: payment-service"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/services/payment-service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Run tests (compile verify)
+        run: ./mvnw verify -B
+        env:
+          JWT_SECRET: test-secret-must-be-at-least-32-chars-long
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  #  JOB 3c: Test Notification Service
+  # ═══════════════════════════════════════════════════════════════════════════
+  test-notification-service:
+    name: "Test: notification-service"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/services/notification-service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Run tests (compile verify)
+        run: ./mvnw verify -B
+
+  # ═══════════════════════════════════════════════════════════════════════════
   #  JOB 4: Build & Push Docker Images
   #  Only runs on push to main/develop (not on PRs — save registry space)
   # ═══════════════════════════════════════════════════════════════════════════
   docker-build-push:
     name: "Docker: Build & Push"
     runs-on: ubuntu-latest
-    needs: [test-auth-service, test-url-service, test-frontend]
+    needs: [test-auth-service, test-url-service, test-analytics-service, test-payment-service, test-notification-service, test-frontend]
     if: github.event_name == 'push'  # Don't build Docker on PRs
 
     permissions:
@@ -188,6 +259,10 @@ jobs:
             context: backend/services/url-service
           - name: analytics-service
             context: backend/services/analytics-service
+          - name: payment-service
+            context: backend/services/payment-service
+          - name: notification-service
+            context: backend/services/notification-service
           - name: frontend
             context: frontend
 

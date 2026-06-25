@@ -1,15 +1,15 @@
 // src/services/paymentService.js
-import api from "../lib/axios";
+import { paymentApi } from "../lib/axios";
 
 export const paymentService = {
   // Create a Razorpay order on our backend
-  createOrder: (plan) => api.post("/api/v1/payments/create-order", { plan }),
+  createOrder: (plan) => paymentApi.post("/api/v1/payments/create-order", { plan }),
   // Verify payment signature after successful payment
-  verifyPayment: (data) => api.post("/api/v1/payments/verify", data),
+  verifyPayment: (data) => paymentApi.post("/api/v1/payments/verify", data),
   // Get current subscription
-  getSubscription: () => api.get("/api/v1/payments/subscription"),
+  getSubscription: () => paymentApi.get("/api/v1/payments/subscription"),
   // Cancel subscription
-  cancelSubscription: () => api.post("/api/v1/payments/cancel"),
+  cancelSubscription: () => paymentApi.post("/api/v1/payments/cancel"),
 };
 
 /**
