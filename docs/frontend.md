@@ -49,36 +49,48 @@ frontend/src/
 
 ## Routing
 
-Routes are defined in [App.jsx](../frontend/src/App.jsx) using React Router v6:
+Routes are defined in [App.jsx](../frontend/src/App.jsx) using React Router:
 
-| Path | Component | Navbar |
+| Path | Component | Description / Access |
 | :--- | :--- | :--- |
-| `/` | `HomePage` | Full Navbar (Platform, Pricing, Login, Sign up) |
-| `/login` | `LoginPage` | AuthNavbar (Logo only, links to `/`) |
-| `/signup` | `SignupPage` | AuthNavbar (Logo only, links to `/`) |
+| `/` | `HomePage` | Public landing page with features overview |
+| `/login` | `LoginPage` | Auth access portal |
+| `/signup` | `SignupPage` | User registration |
+| `/pricing` | `PricingPage` | Subscription plan list and Razorpay checkout modal |
+| `/docs` | `DocsPage` | Microservices API reference docs and endpoints map |
+| `/dashboard` | `DashboardPage` | Private user dashboard (URL lists, metrics summary, creation form, QR viewer) |
+| `/analytics/:shortCode` | `AnalyticsPage` | Deep link performance breakdown (OS, device types, top countries) |
+| `/settings` | `SettingsPage` | User profile configs, subscription records, and security toggles |
 
 ---
 
 ## Pages
 
 ### HomePage (`/`)
-- Displays the full `Navbar` component.
-- Hero section with "Get Started Free" and "Login" call-to-action buttons.
+- Displays the full landing navbar.
+- Hero section with "Get Started Free", demo shortening text box, and feature highlight grid.
 
 ### LoginPage (`/login`)
-- Displays the `AuthNavbar` with the Shortify logo linking to home.
-- Email and password input fields with icons and password visibility toggle.
-- Forgot password link.
-- Login submit button.
-- Terms disclaimer: *By logging in, you are accepting all the terms & conditions.*
-- "Don't have an account? Sign up" link to `/signup`.
+- Displays authentication navbar with logo linking to home.
+- Form inputs for email, password, showing password toggles, and direct routing back to dashboard upon success.
 
 ### SignupPage (`/signup`)
-- Displays the `AuthNavbar` with the Shortify logo linking to home.
-- "Create your account" heading with "Already have an account? Login" link to `/login`.
-- Email and password input fields with icons and password visibility toggle.
-- "Create a free account" submit button.
-- Terms disclaimer: *By creating an account, you agree to our Terms of Service and Privacy Policy.*
+- Accounts setup portal with basic validations.
+
+### PricingPage (`/pricing`)
+- Premium billing layout showcasing Free, Pro, and Business tiers.
+- Integrated with Razorpay JS SDK to generate orders, trigger safe payment overlays, and report transaction hashes back to `/api/v1/payments/verify`.
+
+### DocsPage (`/docs`)
+- Dedicated visual guide for the distributed APIs layout.
+- Provides interactive examples of headers, payloads, and response JSON objects for Auth, URLs, QR, and Analytics services.
+
+### DashboardPage (`/dashboard`)
+- Direct access to URLs inventory, paginated search, and creation forms.
+- Features dynamic copy utilities and a **QR Code** viewer action button linked directly to the backend's `/api/v1/urls/{shortCode}/qr` generator.
+
+### AnalyticsPage (`/analytics/:shortCode`)
+- Renders responsive Recharts area and pie graphs plotting click counts, country distributions, and device specifications.
 
 ---
 

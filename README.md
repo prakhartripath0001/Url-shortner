@@ -64,6 +64,7 @@ This single command will:
 
 ### Local Console Tool Port Maps
 - **Frontend App**: [http://localhost:3000](http://localhost:3000)
+- **API Documentation**: [http://localhost:3000/docs](http://localhost:3000/docs) (Interactive developer-facing reference)
 - **Kafka Web Console**: [http://localhost:8090](http://localhost:8090)
 - **phpMyAdmin (DB management)**: [http://localhost:8080](http://localhost:8080) (Log in with username `root` / password `root`)
 - **MailHog (SMTP Client)**: [http://localhost:8025](http://localhost:8025)
