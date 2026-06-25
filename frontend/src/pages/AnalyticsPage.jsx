@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { ArrowLeft, TrendingUp, MousePointerClick, Globe, Smartphone, Loader2, Monitor, Tablet } from "lucide-react";
-import { analyticsService } from "../../services/analyticsService";
-import DashboardLayout from "../../components/DashboardLayout";
-import { formatDate } from "../../lib/dateUtils";
+import { ArrowLeft, TrendingUp, MousePointerClick, Globe, Smartphone, Loader2, Monitor, Tablet, BarChart2 } from "lucide-react";
+import { analyticsService } from "../services/analyticsService";
+import DashboardLayout from "../components/DashboardLayout";
+import { formatDate } from "../lib/dateUtils";
 
 const DEVICE_COLORS = { DESKTOP: "#6366f1", MOBILE: "#a78bfa", TABLET: "#34d399", BOT: "#f59e0b", UNKNOWN: "#64748b" };
 const COUNTRY_COLORS = ["#6366f1", "#8b5cf6", "#a78bfa", "#c4b5fd", "#ddd6fe"];

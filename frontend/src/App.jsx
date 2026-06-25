@@ -12,6 +12,7 @@ const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const DocsPage = lazy(() => import("./pages/DocsPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 const PAGE_TITLES = {
@@ -23,6 +24,7 @@ const PAGE_TITLES = {
   "/analytics": "Analytics — Shortify",
   "/pricing": "Pricing — Shortify",
   "/settings": "Settings — Shortify",
+  "/docs": "API Documentation — Shortify",
 };
 
 function TitleManager() {
@@ -53,6 +55,7 @@ export default function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/docs" element={<DocsPage />} />
 
           {/* Protected — requires login */}
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />

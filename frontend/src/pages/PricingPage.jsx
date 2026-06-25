@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Check, Crown, Zap, Loader2, Star } from "lucide-react";
 import toast from "react-hot-toast";
-import { paymentService, loadRazorpay, openRazorpayCheckout } from "../../services/paymentService";
-import { useAuthStore } from "../../store/authStore";
-import DashboardLayout from "../../components/DashboardLayout";
+import { paymentService, loadRazorpay, openRazorpayCheckout } from "../services/paymentService";
+import { useAuthStore } from "../store/authStore";
+import DashboardLayout from "../components/DashboardLayout";
 
 const PLANS = [
   {

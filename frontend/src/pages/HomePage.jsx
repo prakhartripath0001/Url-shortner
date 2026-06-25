@@ -44,7 +44,7 @@ export default function HomePage() {
         <div className="hidden md:flex items-center gap-6 text-sm text-slate-400">
           <a href="#features" className="hover:text-white transition">Features</a>
           <Link to="/pricing" className="hover:text-white transition">Pricing</Link>
-          <a href="#" className="hover:text-white transition">Docs</a>
+          <Link to="/docs" className="hover:text-white transition">Docs</Link>
         </div>
         <div className="flex items-center gap-3">
           <Link to="/login" className="text-sm text-slate-400 hover:text-white transition px-3 py-1.5">Sign In</Link>

@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { useAuthStore } from "../../store/authStore";
-import { authService } from "../../services/authService";
+import { useAuthStore } from "../store/authStore";
+import { authService } from "../services/authService";
 import { useMutation } from "@tanstack/react-query";
 import { User, Mail, Lock, Eye, EyeOff, Loader2, Trash2, Crown } from "lucide-react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
-import DashboardLayout from "../../components/DashboardLayout";
+import DashboardLayout from "../components/DashboardLayout";
 
 export default function SettingsPage() {
   const { user, updateUser, logout } = useAuthStore();

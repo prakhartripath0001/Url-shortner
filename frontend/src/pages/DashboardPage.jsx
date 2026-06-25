@@ -3,11 +3,12 @@ import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link2, Trash2, Copy, QrCode, BarChart2, Plus, ExternalLink, Search, Loader2, Globe, Lock } from "lucide-react";
 import toast from "react-hot-toast";
-import { urlService } from "../../services/urlService";
-import { useAuthStore } from "../../store/authStore";
-import DashboardLayout from "../../components/DashboardLayout";
-import CreateUrlModal from "../../components/CreateUrlModal";
-import { formatDistanceToNow } from "../../lib/dateUtils";
+import { urlService } from "../services/urlService";
+import { useAuthStore } from "../store/authStore";
+import DashboardLayout from "../components/DashboardLayout";
+import CreateUrlModal from "../components/CreateUrlModal";
+import QrCodeModal from "../components/QrCodeModal";
+import { formatDistanceToNow } from "../lib/dateUtils";
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
@@ -15,6 +16,7 @@ export default function DashboardPage() {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [page, setPage] = useState(0);
+  const [qrModalUrl, setQrModalUrl] = useState(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["urls", page],
@@ -195,6 +197,13 @@ export default function DashboardPage() {
                     <BarChart2 size={16} />
                   </Link>
                   <button
+                    onClick={() => setQrModalUrl({ shortCode: url.shortCode, shortUrl: url.shortUrl })}
+                    className="p-2 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition"
+                    title="QR Code"
+                  >
+                    <QrCode size={16} />
+                  </button>
+                  <button
                     onClick={() => {
                       if (confirm("Delete this link?")) deleteMutation.mutate(url.shortCode);
                     }}
@@ -241,6 +250,14 @@ export default function DashboardPage() {
           queryClient.invalidateQueries(["urls"]);
           setShowCreate(false);
         }}
+      />
+
+      {/* QR Code Modal */}
+      <QrCodeModal
+        open={!!qrModalUrl}
+        onClose={() => setQrModalUrl(null)}
+        shortCode={qrModalUrl?.shortCode}
+        shortUrl={qrModalUrl?.shortUrl}
       />
     </DashboardLayout>
   );

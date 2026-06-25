@@ -1,118 +1,78 @@
-# Microservices Architecture - Shortify
+# Microservices Architecture — Shortify
 
-This document describes the high-level architecture and communication patterns for **Shortify**, our distributed URL shortener system.
+This document describes the high-level architecture, service interactions, and data model designs for **Shortify**, our distributed URL shortener system.
 
 ---
 
 ## Service Overview
 
-| Service | Port | Responsibility | Database / Storage |
-|---|---|---|---|
-| **API Gateway** | `8080` | Single entry point, routing, rate limiting, authentication filter | None |
-| **URL Service** | `8081` | Shortens URLs, resolves short codes to long URLs, manages link expiry | MySQL + Redis (caching) |
-| **Auth Service** | `8082` | User registration, login, JWT issuance and validation | MySQL |
-| **Analytics Service** | `8083` | Tracks link clicks, device, geography, and referrer statistics | MySQL |
-| **Notification Service** | `8084` | Sends email alerts (e.g., link expiration, reports) | None |
+| Service | Port | Responsibility | Primary Datastore |
+| :--- | :--- | :--- | :--- |
+| **Auth Service** | `8082` | User registrations, security validation, password resets, and token management | MySQL (`auth_db`) |
+| **URL Service** | `8083` | URL shortening, redirects (hot path), custom aliases, and QR codes | MySQL (`url_db`) + Redis (LRU cache) |
+| **Analytics Service** | `8084` | Captures clicks asynchronously and builds country, device, and browser reports | MySQL (`analytics_db`) |
+| **Notification Service** | `8085` | Listens for events to send email alerts | None (State-free Kafka consumer) |
+| **Payment Service** | `8086` | Razorpay order checkout, billing period verification, and plan subscriptions | MySQL (`payment_db`) |
 
 > [!IMPORTANT]
-> **Database Isolation**: Each service is completely independent with its own schema and deployed in its own Docker container. Services never share a database directly to ensure loose coupling and independent scalability.
+> **Database Isolation**: In compliance with microservices architecture guidelines, each service owns its datastore schema. No direct cross-database joins are allowed. Any inter-service data integration is orchestrated via REST endpoints or asynchronously using Kafka events.
 
 ---
 
 ## Communication Patterns
 
-### Synchronous Communication (HTTP / gRPC)
-- **API Gateway → Services**: Gateway routes incoming client traffic to internal microservices.
-- **Service → Service (Feign Client)**: Used when immediate responses are required.
-  - *Example*: The URL Service or Gateway calling the Auth Service to validate a JWT token before processing a request.
-
-### Asynchronous Communication (Kafka Event Bus)
-- **Publish-Subscribe**: Used for non-blocking operations and background processing.
-  - *Example*: When a short link is resolved, the URL Service publishes a `url.clicked` event to a Apache Kafka topic.
-  - Both the **Analytics Service** and **Notification Service** consume this event independently to update statistics and trigger alerts without blocking the client redirect response.
+### Asynchronous Event Streaming (Kafka)
+- **High-Performance Redirects**: The redirect path (`GET /:shortCode`) is optimized for low latency. To avoid slowing down redirects with synchronous database writes, the **URL Service** resolves the link and immediately publishes a `url.clicked` event to Kafka.
+- **Independent Consumers**: The **Analytics Service** and **Notification Service** listen to the event bus in parallel to process and persist metrics.
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User
-    participant Gateway as API Gateway (8080)
-    participant URL as URL Service (8081)
+    participant URL as URL Service (8083)
     participant Redis as Redis Cache
     participant Kafka as Kafka Event Bus
-    participant Analytics as Analytics Service (8083)
+    participant Analytics as Analytics Service (8084)
 
-    User->>Gateway: GET /s3R5g9 (Resolve shortcode)
-    Gateway->>URL: Route Request
+    User->>URL: GET /abc1234 (Resolve shortcode)
     URL->>Redis: Check Cache
     alt Cache Hit
         Redis-->>URL: Return Long URL
     else Cache Miss
         URL->>URL: Query MySQL DB & Update Cache
     end
-    URL-->>Gateway: 302 Redirect (Long URL)
-    Gateway-->>User: Redirect Browser
+    URL-->>User: 302 Redirect (Original URL)
     URL-xKafka: Publish "url.clicked" Event (Async)
     Kafka-xAnalytics: Consume Event & Save Metrics
 ```
 
+### Synchronous Communication (REST)
+- **Frontend Interceptor**: The React frontend sends requests to services. The JWT access tokens are validated statelessly by a custom security filter on downstream services (`url-service`, `payment-service`) decoding the signature with the shared `JWT_SECRET`.
+- **Payment Verification Flow**:
+  1. Frontend hits `/api/v1/payments/create-order` on the **Payment Service** to request a new Razorpay order.
+  2. The payment service talks to Razorpay's API and returns the transaction metadata.
+  3. Frontend opens the Razorpay checkout dialog.
+  4. On successful checkout, frontend posts verification details to `/api/v1/payments/verify`.
+  5. The payment service cryptographically verifies the signature, activates the subscription in `payment_db`, and broadcasts a `payment.success` event to Kafka.
+
 ---
 
-## Project Layout
-
-The repository is organized as a monorepo containing all microservices, common infrastructure configurations, and the web frontend.
+## Project Repository Layout
 
 ```text
 url-shortener/
-├── api-gateway/          # Spring Cloud Gateway
-├── eureka-server/        # Netflix Eureka Service Discovery
-├── config-server/        # Centralized configurations (Git/Local application.yml)
-├── url-service/          # Spring Boot URL Service (Core Shortener + Redis)
-│   └── src/ + Dockerfile
-├── auth-service/         # Spring Boot Auth Service (JWT issuance)
-│   └── src/ + Dockerfile
-├── analytics-service/    # Spring Boot Analytics Service (Kafka Consumer)
-│   └── src/ + Dockerfile
-├── notification-service/ # Spring Boot Notification Service (Kafka Consumer)
-│   └── src/ + Dockerfile
-├── frontend/             # React (Vite, Tailwind, i18n) application
-├── docker-compose.yml    # Full local orchestration stack
-└── k8s/                  # Kubernetes manifests (Optional)
+├── backend/
+│   └── services/
+│       ├── auth-service/           # User Auth, session management (Port 8082)
+│       ├── url-service/            # URL redirects, Base62 hashing (Port 8083)
+│       ├── analytics-service/      # Tracks clicks consumed via Kafka (Port 8084)
+│       ├── notification-service/   # Event-driven mail notifications (Port 8085)
+│       └── payment-service/        # Billing & Razorpay gateway (Port 8086)
+├── frontend/                       # React 18 dashboard & billing portal (Port 3000)
+├── infrastructure/
+│   ├── docker/
+│   │   ├── mysql/                  # Database schema init SQL scripts
+│   │   └── monitoring/             # Prometheus & Grafana configs
+│   └── monitoring/
+└── docker-compose.yml              # Combined local runtime orchestrator
 ```
-
----
-
-## Tech Stack & Dependencies
-
-All backend microservices are built using **Spring Boot 3.x** and **Spring Cloud**.
-
-### Common Backend Dependencies
-- **Spring Web**: RESTful API design.
-- **Spring Data JPA**: Database ORM (Hibernate).
-- **Netflix Eureka Client**: Service registration with Discovery Server.
-- **Spring Cloud Config Client**: Remote configuration fetching.
-- **Micrometer Tracing + OpenTelemetry**: Distributed tracing integrated with Zipkin.
-
-### Service-Specific Dependencies (Maven `pom.xml` additions)
-* **API Gateway**:
-  - `spring-cloud-starter-gateway`
-  - `spring-cloud-starter-netflix-eureka-server` (if co-hosted, or gateway client registration)
-* **URL Service & Analytics Service**:
-  - `spring-kafka` (Kafka producer and consumer support)
-* **URL Service (Caching)**:
-  - `spring-boot-starter-data-redis`
-* **Auth Service**:
-  - `spring-boot-starter-security`
-  - `jjwt-api` / `jjwt-impl` / `jjwt-jackson` (JSON Web Token generation)
-
----
-
-## Recommended Step-by-Step Build Order
-
-1. **Infrastructure First**: Setup the Eureka Discovery Server and the Config Server.
-2. **Auth Service**: Implement registration, login, and JWT token issuing.
-3. **URL Service**: Implement core shortening algorithm, MySQL persistence, and Redis caching.
-4. **API Gateway**: Configure routing rules, Eureka integration, and configure the custom JWT validation filter.
-5. **Analytics Service**: Create the database schema and implement the Kafka consumer for the `url.clicked` event.
-6. **Notification Service**: Configure email templates and consume Kafka events for alert thresholds.
-7. **React Frontend**: Connect user interfaces directly to the API Gateway port (`8080`).
-8. **Docker Compose**: Wire up containerized databases, Redis, Kafka, Eureka, Config, services, and frontend in a single local stack.

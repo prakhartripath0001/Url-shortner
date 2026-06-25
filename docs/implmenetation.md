@@ -12,77 +12,55 @@ for senior/staff engineering roles at large-scale tech companies.
 
 | Phase | Title | Status |
 |-------|-------|--------|
-| 1 | Requirements Engineering | 🟡 In Progress |
-| 2 | System Design (HLD + LLD) | ⬜ Pending |
-| 3 | Database Design | ⬜ Pending |
-| 4 | Microservices Design | ⬜ Pending |
-| 5 | Backend Development | ⬜ Pending |
-| 6 | Caching (Redis) | ⬜ Pending |
-| 7 | Messaging (Kafka) | ⬜ Pending |
-| 8 | Security | ⬜ Pending |
-| 9 | Frontend (React + Vite) | ⬜ Pending |
-| 10 | Testing | ⬜ Pending |
-| 11 | Docker | ⬜ Pending |
-| 12 | CI/CD | ⬜ Pending |
-| 13 | Monitoring | ⬜ Pending |
+| 1 | Requirements Engineering | ✅ Complete |
+| 2 | System Design (HLD + LLD) | ✅ Complete |
+| 3 | Database Design | ✅ Complete |
+| 4 | Microservices Design | ✅ Complete |
+| 5 | Backend Development | ✅ Complete |
+| 6 | Caching (Redis) | ✅ Complete |
+| 7 | Messaging (Kafka) | ✅ Complete |
+| 8 | Security | ✅ Complete |
+| 9 | Frontend (React + Vite) | ✅ Complete |
+| 10 | Testing | ✅ Complete |
+| 11 | Docker | ✅ Complete |
+| 12 | CI/CD | ✅ Complete |
+| 13 | Monitoring | 🟡 In Progress |
 | 14 | Production Readiness | ⬜ Pending |
-
----
-
-## Phase 1 — Requirements Engineering 🟡
-
-### Key Decisions Made
-- Scale target: ~100M URLs shortened per day (Bitly-scale)
-- Read-heavy system: ~10:1 read/write ratio
-- Short code length: 7 characters (Base62)
-
-### Pending Tasks for User
-- [ ] Complete Functional Requirements list
-- [ ] Complete Non-Functional Requirements list
-- [ ] Complete Capacity Estimation worksheet
-- [ ] Answer Phase 1 interview questions
 
 ---
 
 ## Tech Stack Locked
 
 ### Backend
-- Java 21, Spring Boot 3.x, Spring Security, Spring Data JPA
-- PostgreSQL (primary DB), Redis (cache), Kafka (events)
+- Java 17, Spring Boot 3.x, Spring Security, Spring Data JPA
+- MySQL (primary DB), Redis (cache), Kafka (events)
 
 ### Frontend
-- React 18, TypeScript, Vite, React Query, Tailwind CSS
+- React 18, Vite, React Query, Tailwind CSS, i18next
 
 ### DevOps
 - Docker, Docker Compose, GitHub Actions, Kubernetes (Phase 14)
 
 ### Testing
-- JUnit 5, Mockito, Testcontainers, REST Assured
-
-### Observability
-- Prometheus, Grafana, ELK Stack, OpenTelemetry
+- JUnit 5, Mockito, Testcontainers
 
 ---
 
-## Repository Structure (Target)
+## Repository Structure
 
-```
-url-shortener/
-├── services/
-│   ├── api-gateway/
-│   ├── auth-service/
-│   ├── url-service/
-│   ├── analytics-service/
-│   └── notification-service/
-├── frontend/
+```text
+├── backend/
+│   └── services/
+│       ├── auth-service/           # User Auth, session management (Port 8082)
+│       ├── url-service/            # URL redirects, Base62 hashing (Port 8083)
+│       ├── analytics-service/      # Tracks clicks consumed via Kafka (Port 8084)
+│       ├── notification-service/   # Event-driven mail notifications (Port 8085)
+│       └── payment-service/        # Billing & Razorpay gateway (Port 8086)
+├── frontend/                       # React 18 dashboard & billing portal (Port 3000)
 ├── infrastructure/
 │   ├── docker/
-│   ├── k8s/
+│   │   ├── mysql/                  # Database schema init SQL scripts
+│   │   └── monitoring/             # Prometheus & Grafana configs
 │   └── monitoring/
-├── .github/
-│   └── workflows/
-└── docs/
-    ├── architecture/
-    ├── api/
-    └── decisions/   ← Architecture Decision Records (ADRs)
+└── docker-compose.yml              # Combined local runtime orchestrator
 ```
